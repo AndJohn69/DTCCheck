@@ -1,40 +1,74 @@
+https://playcode.io/dtctest?tabs=console&script.js&output
 
 
-
-01120204031204010600070410801100127F200000939421000093943084
-
-0112
-0204
-0312
-0401
-0600
-0704
-1080
-1100
-127F
-2000009394
-2100009394
-  3084
-  
 var msg = 'Result: ';
 
-var extended = "01120204031204010600070410801100127F200000939421000093943084";
+var Plant = "VCT";
+var ProcessStep = "FHC";
+var CarId = "3612345"
+var IsTestCar = true;
+var Ecu = "IHU";
+var AutosarVersion = "4.1";
+var DTCHex = "D30B87";
+var DTCSAE = "U130B87";
+var TestTime = "2018-11-24 08:00";
+var GlobalTimeRead = "3945.1";
+var status = "20";
+var extended = "01120204031204010600070410801100127F200000939421000093943064";
+var snapshot = "01120204031204010600070410801100127F200000939421000093943064";
 
-var dictExt = createExtendedDict(extended);
+var dtcDict = {Plant,ProcessStep,CarId,IsTestCar,Ecu,TestTime,GlobalTimeRead,AutosarVersion,DTCHex,DTCSAE};
 
-for(var id in dictExt) {
-  var value = dictExt[id];
+getDtcStatusBitsFromHexString(dtcDict, status);
+getDtcExtendedDataFromHexString(dtcDict, extended);
+// getDtcSnapshotDataFromHexString(dtcDict, snapshot);
+
+for(var id in dtcDict) {
+  var value = dtcDict[id];
  
   console.log(id + ": " + value);
  
 }
 
 
-$('#msg').html(msg + dictExt[30])
+$('#msg').html(msg + dtcDict.FDC10)
 
-function createExtendedDict(extendedData){
+function getDtcStatusBitsFromHexString(dict, statusByte){
+        var value = statusByte.substr(0, 2); // 1 byte hex
+        // Create SB0-7 (bit value 1/0)
+        var valueBin = "00000000" + parseInt(value, 16).toString(2);
+        for(var i = 0; i <= 7; i++){
+          dict["SB" + i] = valueBin.substr(-(i+1),1);
+        }
+        dict["SB"] = value;
   
-  var dict = {};
+}
+
+function getDtcExtendedDataFromHexString(dict, extendedData){
+  
+  // Loops through the 'extendedData' hex string and creates/updates 
+  // the following properties of the 'dict' object with the corresponding values from the hex string:
+  // OCC1: 0-255 (dec)
+  // OCC2: 0-255 (dec)
+  // OCC3: 0-255 (dec)
+  // OCC4: 0-255 (dec)
+  // OCC6: 0-255 (dec)
+  // OCC7: 0-255 (dec)
+  // FDC10: -128-127 (dec)
+  // FDC11: -128-127 (dec)
+  // FDC12: -128-127 (dec)
+  // TS20: seconds (one decimal)
+  // TS21: seconds (one decimal)
+  // SI0: 0/1 (bit value)
+  // SI1: 0/1 (bit value)
+  // SI2: 0/1 (bit value)
+  // SI3: 0/1 (bit value)
+  // SI4: 0/1 (bit value)
+  // SI5: 0/1 (bit value)
+  // SI6: 0/1 (bit value)
+  // SI7: 0/1 (bit value)
+  // SI30: 1 byte hex string
+  
   var pos = 0;
   var id = "";
   var value = 0;
@@ -60,28 +94,26 @@ function createExtendedDict(extendedData){
       case '10':
       case '11':
       case '12':  
-        value = byte2signed(extendedData.substr(pos, 2)); // Signed byte (-128-127)
+        value = signedHexByteToDecimal(extendedData.substr(pos, 2)); // Signed byte (-128-127)
         pos = pos + 2;
         id = "FDC" + id;
         break;
       // TS's
       case '20':
       case '21':  
-        value = extendedData.substr(pos, 8); // 4 bytes hex
+        value = (parseInt(extendedData.substr(pos, 8), 16) / 10).toFixed(1); // Time in seconds
         pos = pos + 8;
         id = "TS" + id;
         break;
       // SI
       case '30':  
         value = extendedData.substr(pos, 2); // 1 byte hex
-        valueBin = parseInt(extendedData.substr(pos, 2), 16).toString(2);
-        console.log(valueBin);
-        pos = pos + 2;
-        // Create SI0-7 (true/false)
+        // Create SI0-7 (bit value 1/0)
+        var valueBin = "00000000" + parseInt(value, 16).toString(2);
         for(var i = 0; i <= 7; i++){
-          dict["SI" + i] = valueBin.substr(-i,1);
-          console.log("SI" + i + ": " + dict["SI" + i]);
+          dict["SI" + i] = valueBin.substr(-(i+1),1);
         }
+        pos = pos + 2;
         id = "SI" + id;
         break;
       default:
@@ -98,18 +130,8 @@ function createExtendedDict(extendedData){
   
   
 }
-    
-    dict[id] = value;
-    
-  } while (pos < extendedData.length);
-  
-  return dict;
-  
-  
-}
 
-
-function byte2signed (hexByte){
+function signedHexByteToDecimal (hexByte){
   
   a = parseInt(hexByte, 16);
   if ((a & 0x80) > 0) {
@@ -117,4 +139,7 @@ function byte2signed (hexByte){
   }
   
   return a;
+}
+
+function getDtcSnapshotDataFromHexString(dict, snapshotData){
 }

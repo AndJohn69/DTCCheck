@@ -1,27 +1,31 @@
 https://playcode.io/dtctest?tabs=console&script.js&output
 
 
-var msg = 'Result: ';
-
 var Plant = "VCT";
 var ProcessStep = "FHC";
-var CarId = "3612345"
+var CarMixNumber = "3612345"
 var IsTestCar = true;
+var TestCarId = "XYV1600"
 var Ecu = "IHU";
 var AutosarVersion = "4.1";
+var DiagDbNumber = "31123456AB";
+var EcuSWNumbers = "31123457AA,31123458AB,31123459AC"
 var DTCHex = "D30B87";
 var DTCSAE = "U130B87";
 var TestTime = "2018-11-24 08:00";
-var GlobalTimeRead = "3945.1";
+var GlobalTimeReadInSeconds = "3945.1";
+
 var status = "20";
 var extended = "01120204031204010600070410801100127F200000939421000093943064";
-var snapshot = "01120204031204010600070410801100127F200000939421000093943064";
+var snapshot = "2005DD000002770EDD01000001DD0237DD0A0DDD0B0008";
 
-var dtcDict = {Plant,ProcessStep,CarId,IsTestCar,Ecu,TestTime,GlobalTimeRead,AutosarVersion,DTCHex,DTCSAE};
+var dtcDict = 
+{Plant,ProcessStep,CarMixNumber,IsTestCar,TestCarId,Ecu,TestTime,GlobalTimeReadInSeconds,
+AutosarVersion,DiagDbNumber,EcuSWNumbers,DTCHex,DTCSAE};
 
 getDtcStatusBitsFromHexString(dtcDict, status);
 getDtcExtendedDataFromHexString(dtcDict, extended);
-// getDtcSnapshotDataFromHexString(dtcDict, snapshot);
+getDtcSnapshotStdDataFromHexString(dtcDict, snapshot);
 
 for(var id in dtcDict) {
   var value = dtcDict[id];
@@ -30,17 +34,27 @@ for(var id in dtcDict) {
  
 }
 
-
-$('#msg').html(msg + dtcDict.FDC10)
-
 function getDtcStatusBitsFromHexString(dict, statusByte){
+  
+  // Creates/updates the following properties of the 'dict' object from the input byte / hex string:
+  // SB0: 0/1 (bit value)
+  // SB1: 0/1 (bit value)
+  // SB2: 0/1 (bit value)
+  // SB3: 0/1 (bit value)
+  // SB4: 0/1 (bit value)
+  // SB5: 0/1 (bit value)
+  // SB6: 0/1 (bit value)
+  // SB7: 0/1 (bit value)
+  // SB: Status byte (hex value)
+  
+  
         var value = statusByte.substr(0, 2); // 1 byte hex
         // Create SB0-7 (bit value 1/0)
         var valueBin = "00000000" + parseInt(value, 16).toString(2);
         for(var i = 0; i <= 7; i++){
           dict["SB" + i] = valueBin.substr(-(i+1),1);
         }
-        dict["SB"] = value;
+        dict["SB"] = "0x" + value;
   
 }
 
@@ -57,8 +71,8 @@ function getDtcExtendedDataFromHexString(dict, extendedData){
   // FDC10: -128-127 (dec)
   // FDC11: -128-127 (dec)
   // FDC12: -128-127 (dec)
-  // TS20: seconds (one decimal)
-  // TS21: seconds (one decimal)
+  // TS20: seconds (with one decimal)
+  // TS21: seconds (with one decimal)
   // SI0: 0/1 (bit value)
   // SI1: 0/1 (bit value)
   // SI2: 0/1 (bit value)
@@ -67,7 +81,7 @@ function getDtcExtendedDataFromHexString(dict, extendedData){
   // SI5: 0/1 (bit value)
   // SI6: 0/1 (bit value)
   // SI7: 0/1 (bit value)
-  // SI30: 1 byte hex string
+  // SI30: 1 byte hex
   
   var pos = 0;
   var id = "";
@@ -107,11 +121,11 @@ function getDtcExtendedDataFromHexString(dict, extendedData){
         break;
       // SI
       case '30':  
-        value = extendedData.substr(pos, 2); // 1 byte hex
+        value = "0x" + extendedData.substr(pos, 2); // 1 byte hex
         // Create SI0-7 (bit value 1/0)
         var valueBin = "00000000" + parseInt(value, 16).toString(2);
         for(var i = 0; i <= 7; i++){
-          dict["SI" + i] = valueBin.substr(-(i+1),1);
+          dict["SI" + i] = valueBin.substr(-(i+1), 1);
         }
         pos = pos + 2;
         id = "SI" + id;
@@ -126,9 +140,6 @@ function getDtcExtendedDataFromHexString(dict, extendedData){
     
   } while (pos < extendedData.length);
   
-  return dict;
-  
-  
 }
 
 function signedHexByteToDecimal (hexByte){
@@ -141,5 +152,24 @@ function signedHexByteToDecimal (hexByte){
   return a;
 }
 
-function getDtcSnapshotDataFromHexString(dict, snapshotData){
+function getDtcSnapshotStdDataFromHexString(dict, snapshotData){
+    // "2005DD000002770EDD01000001DD0237DD0A0DDD0B0008"
+    var pos = 0;
+    // DD00 Global time
+    pos = snapshotData.search("DD00");
+    if (pos != -1 ) { 
+        dict["DD00"] = (parseInt(snapshotData.substr(pos + 4, 8), 16) / 10).toFixed(1); // Time in seconds
+    }
+    // DD01 Distance
+    pos = snapshotData.search("DD01");
+    if (pos != -1 ) dict["DD01"] = parseInt(snapshotData.substr(pos + 4, 6), 16); // Km
+    // DD02 Battery V
+    pos = snapshotData.search("DD02");
+    if (pos != -1 ) dict["DD02"] = (parseInt(snapshotData.substr(pos + 4, 2), 16) / 4).toFixed(2); // Voltage
+    // DD0A Usage Mode
+    pos = snapshotData.search("DD0A");
+    if (pos != -1 ) dict["DD0A"] = "0x" + snapshotData.substr(pos + 4, 2);
+    // DD0B PNC
+     pos = snapshotData.search("DD0B");
+    if (pos != -1 ) dict["DD0B"] = "0x" + snapshotData.substr(pos + 4, 4);
 }

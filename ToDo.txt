@@ -1,0 +1,98 @@
+
+
+
+01120204031204010600070410801100127F200000939421000093943084
+
+0112
+0204
+0312
+0401
+0600
+0704
+1080
+1100
+127F
+2000009394
+2100009394
+  3084
+  
+var msg = 'Result: ';
+
+var extended = "01120204031204010600070410801100127F200000939421000093943084";
+
+var dictExt = createExtendedDict(extended);
+
+for(var id in dictExt) {
+  var value = dictExt[id];
+ 
+  console.log(id + ": " + value);
+ 
+}
+
+
+$('#msg').html(msg + dictExt[30])
+
+function createExtendedDict(extendedData){
+  
+  var dict = {};
+  var pos = 0;
+  var id = "";
+  var value = 0;
+  
+  do {
+    id = extendedData.substr(pos, 2);
+    pos = pos + 2;
+    
+    switch (id) {
+      // OCC's
+      case '01':
+      case '02':
+      case '03':
+      case '04':
+      case '05':
+      case '06':
+      case '07':
+        value = parseInt(extendedData.substr(pos, 2), 16);
+        pos = pos + 2;
+        break;
+      // FDC's
+      case '10':
+      case '11':
+      case '12':  
+        value = byte2signed(extendedData.substr(pos, 2));
+        pos = pos + 2;
+        break;
+      // TS's
+      case '20':
+      case '21':  
+        value = extendedData.substr(pos, 8);
+        pos = pos + 8;
+        break;
+      // SI
+      case '30':  
+        value = extendedData.substr(pos, 2);
+        pos = pos + 2;
+        break;
+      default:
+        value = 0;
+        pos = pos + 2;
+    }
+    
+    dict[id] = value;
+    
+  } while (pos < extendedData.length);
+  
+  return dict;
+  
+  
+}
+
+function byte2signed (hexByte){
+  
+  a = parseInt(hexByte, 16);
+  if ((a & 0x80) > 0) {
+    a = a - 0x100;
+  }
+  
+  return a;
+}

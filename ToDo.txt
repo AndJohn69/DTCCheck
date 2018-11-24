@@ -1,6 +1,7 @@
 https://playcode.io/dtctest/v2?tabs=console&script.js&output
 
 
+
 var Plant = "VCT";
 var ProcessStep = "FHC";
 var CarMixNumber = "3612345"
@@ -16,7 +17,7 @@ var TestTime = "2018-11-24 08:00";
 var GlobalTimeReadInSeconds = "3945.1";
 
 var status = "20";
-var extended = "01120204031204010600070410801100127F200000939421000093943064";
+var extended = "01120204031204010600070410801100127F200000939421000093943084";
 var snapshot = "2005DD000002770EDD01000001DD0237DD0A0DDD0B0008";
 
 var dtcDict = 
@@ -26,12 +27,45 @@ AutosarVersion,DiagDbNumber,EcuSWNumbers,DTCHex,DTCSAE};
 getDtcStatusBitsFromHexString(dtcDict, status);
 getDtcExtendedDataFromHexString(dtcDict, extended);
 getDtcSnapshotStdDataFromHexString(dtcDict, snapshot);
+checkIfDTCValid(dtcDict);
+
+if (dtcDict.IsDtcValid) {
+    console.log(dtcDict.DTCSAE + " is valid. (" + dtcDict.IsDtcValidInfo + ")");  
+}
+else {
+    console.log(dtcDict.DTCSAE + " is not valid. (" + dtcDict.IsDtcValidInfo + ")");
+}
 
 for(var id in dtcDict) {
   var value = dtcDict[id];
  
   console.log(id + ": " + value);
  
+}
+
+function checkIfDTCValid(dtcDict){
+  if (dtcDict.SI3 == 1) {               // Aged DTC  - Not valid
+    dtcDict.IsDtcValid = false; 
+    dtcDict.IsDtcValidInfo = "Aged DTC";
+    return;
+  }  
+  if (dtcDict.SI6 == 1) {               // Emission DTC - Valid
+    dtcDict.IsDtcValid = true;
+    dtcDict.IsDtcValidInfo = "Emission DTC";
+    return;
+  }  
+  if (dtcDict.SB0 == 1) {               // Test failed now - Valid
+    dtcDict.IsDtcValid = true;
+    dtcDict.IsDtcValidInfo = "Test failed now";
+    return; 
+  } 
+  if (dtcDict.OCC2 > 1) {               // Confirmed fault free cycles since last cycle with faults > 1. - Not valid
+    dtcDict.IsDtcValid = false;
+    dtcDict.IsDtcValidInfo = dtcDict.OCC2 + " OK cycles since set";
+    return;
+  }  
+  dtcDict.IsDtcValid = true;
+  dtcDict.IsDtcValidInfo = "n/a";
 }
 
 function getDtcStatusBitsFromHexString(dict, statusByte){

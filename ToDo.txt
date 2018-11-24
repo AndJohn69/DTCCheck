@@ -54,6 +54,7 @@ function createExtendedDict(extendedData){
       case '07':
         value = parseInt(extendedData.substr(pos, 2), 16);
         pos = pos + 2;
+        id = "OCC" + id.substr(1,1);
         break;
       // FDC's
       case '10':
@@ -61,20 +62,24 @@ function createExtendedDict(extendedData){
       case '12':  
         value = byte2signed(extendedData.substr(pos, 2));
         pos = pos + 2;
+        id = "FDC" + id;
         break;
       // TS's
       case '20':
       case '21':  
         value = extendedData.substr(pos, 8);
         pos = pos + 8;
+        id = "TS" + id;
         break;
       // SI
       case '30':  
         value = extendedData.substr(pos, 2);
         pos = pos + 2;
+        id = "SI" + id;
         break;
       default:
         value = 0;
+        id = "??" + id;
         pos = pos + 2;
     }
     
@@ -86,6 +91,7 @@ function createExtendedDict(extendedData){
   
   
 }
+
 
 function byte2signed (hexByte){
   

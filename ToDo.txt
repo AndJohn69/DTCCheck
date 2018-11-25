@@ -13,7 +13,7 @@ Log diagno + SW + test time / global time read + time set
 
 Functional ClearDTC in the end if no valid DTC?
 
-
+Autosar version?
 
 
 

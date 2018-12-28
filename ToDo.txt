@@ -2,14 +2,14 @@ Read DTCs (bitmask?)
 Loop each DTC
     Read extended data (handle no resp / invalid resp)
     Read snapshot data (handle no resp / invalid resp)
-Check if valid DTC
+Check if valid DTC (valid = not erased/hidden by VCATS)
     Set flag
 Erase all if no valid -> Set/update global flag
-    else Erase each not vald DTC separately (handle no resp / invalid resp)
+    else Erase each not valid DTC separately (handle no resp / invalid resp)
 
 Log action (including test car status)
 Log process + DTCHex + status + extended + snapshot
-Log diagno + SW + test time / global time read + time set
+Log diagno + SW + test time / global time read + time set + Autosar version
 
 Functional ClearDTC in the end if no valid DTC?
 
